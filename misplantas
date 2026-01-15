@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Botánico Personal</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f4f0; color: #2d3e2d; padding: 20px; }
+       .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { color: #2e7d32; }
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; }
+        button { background: #4caf50; color: white; border: none; font-weight: bold; cursor: pointer; }
+       .overdue { border-left: 5px solid #e53935; }
+    </style>
+</head>
+<body>
+    <h1>Mis Plantas</h1>
+    <div class="card">
+        <h3>Añadir Nueva Planta</h3>
+        <input type="text" id="nombre" placeholder="Nombre de la planta (ej. Ficus)">
+        <input type="number" id="frecuencia" placeholder="Frecuencia de riego (días)">
+        <button onclick="agregarPlanta()">Guardar Planta</button>
+    </div>
+    <div id="listaPlantas"></div>
+
+    <script>
+        let plantas = JSON.parse(localStorage.getItem('plantas')) ||;
+
+        function agregarPlanta() {
+            const nombre = document.getElementById('nombre').value;
+            const freq = document.getElementById('frecuencia').value;
+            if(!nombre ||!freq) return alert("Completa los datos");
+            
+            const nueva = {
+                id: Date.now(),
+                nombre: nombre,
+                frecuencia: parseInt(freq),
+                ultimoRiego: new Date().toISOString()
+            };
+            plantas.push(nueva);
+            guardar();
+            render();
+        }
+
+        function registrarRiego(id) {
+            const index = plantas.findIndex(p => p.id === id);
+            plantas[index].ultimoRiego = new Date().toISOString();
+            guardar();
+            render();
+        }
+
+        function guardar() { localStorage.setItem('plantas', JSON.stringify(plantas)); }
+
+        function render() {
+            const lista = document.getElementById('listaPlantas');
+            lista.innerHTML = '';
+            plantas.forEach(p => {
+                const ult = new Date(p.ultimoRiego);
+                const prox = new Date(ult);
+                prox.setDate(ult.getDate() + p.frecuencia);
+                const esVencido = new Date() > prox;
+
+                lista.innerHTML += `
+                    <div class="card ${esVencido? 'overdue' : ''}">
+                        <strong>${p.nombre}</strong><br>
+                        Frecuencia: cada ${p.frecuencia} días<br>
+                        Próximo mantenimiento: ${prox.toLocaleDateString()}<br>
+                        <button onclick="registrarRiego(${p.id})">Marcar como Completado</button>
+                    </div>
+                `;
+            });
+        }
+        render();
+    </script>
+</body>
+</html>
